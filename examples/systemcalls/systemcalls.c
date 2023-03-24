@@ -1,3 +1,9 @@
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/wait.h>
 #include "systemcalls.h"
 
 /**
@@ -11,13 +17,13 @@ bool do_system(const char *cmd)
 {
 
 /*
- * TODO  add your code here
  *  Call the system() function with the command set in the cmd
  *   and return a boolean true if the system() call completed with success
  *   or false() if it returned a failure
 */
+    int ret = system(cmd);
 
-    return true;
+    return (ret==0)? true : false;
 }
 
 /**
@@ -38,6 +44,8 @@ bool do_exec(int count, ...)
 {
     va_list args;
     va_start(args, count);
+    pid_t childpid, w;
+    int wstatus;
     char * command[count+1];
     int i;
     for(i=0; i<count; i++)
@@ -58,6 +66,37 @@ bool do_exec(int count, ...)
  *   as second argument to the execv() command.
  *
 */
+    childpid = fork();
+    if(childpid == -1)
+    {
+        perror("fail to fork");
+    }
+    else if(childpid == 0)
+    {
+        execv(command[0], command);
+        perror("fail to execv");
+		exit(EXIT_FAILURE);
+    }
+    else
+    {
+        w = wait(&wstatus);
+        if (w == -1)
+        {
+            perror("return error to wait");
+            va_end(args);
+            return false;
+        }
+
+		if (WIFEXITED(wstatus))
+        {
+			if(WEXITSTATUS(wstatus)!=EXIT_SUCCESS)
+			{
+				va_end(args);
+				return false;
+            }
+            printf("%s, %d exited, status=%d\n", __func__, childpid, WEXITSTATUS(wstatus));
+        }
+    }
 
     va_end(args);
 
@@ -73,6 +112,9 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
 {
     va_list args;
     va_start(args, count);
+    pid_t childpid, w;
+    int wstatus;
+    int fd;
     char * command[count+1];
     int i;
     for(i=0; i<count; i++)
@@ -86,12 +128,63 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
 
 
 /*
- * TODO
  *   Call execv, but first using https://stackoverflow.com/a/13784315/1446624 as a refernce,
  *   redirect standard out to a file specified by outputfile.
  *   The rest of the behaviour is same as do_exec()
  *
 */
+    fd = open(outputfile, O_WRONLY|O_TRUNC|O_CREAT, 0755);
+    if(fd < 0)
+    {
+        perror("fail to open file");
+        exit(EXIT_FAILURE);
+    }
+
+    childpid = fork();
+    if(childpid == -1)
+    {
+        perror("fail to fork");
+        exit(EXIT_FAILURE);
+    }
+    else if(childpid == 0)
+    {
+        int ret;
+
+        if (dup2(fd, 1) < 0)
+        {
+            perror("dup2");
+            exit(EXIT_FAILURE);
+        }
+        close(fd);
+
+        ret = execv(command[0], command);
+        if(ret==-1)
+        {
+            perror("fail to execv");
+            exit(EXIT_FAILURE);
+        }
+    }
+    else
+    {
+        w = wait(&wstatus);
+        close(fd);
+        if (w == -1)
+        {
+            perror("return error to wait");
+            va_end(args);
+            return false;
+        }
+
+		if (WIFEXITED(wstatus))
+        {
+			if(WEXITSTATUS(wstatus)!=EXIT_SUCCESS)
+			{
+				va_end(args);
+				return false;
+            }
+            printf("%s, %d exited, status=%d\n", __func__, childpid, WEXITSTATUS(wstatus));
+        }
+    }
 
     va_end(args);
 
