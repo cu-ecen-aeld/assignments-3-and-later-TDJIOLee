@@ -12,7 +12,6 @@ BUSYBOX_VERSION=1_33_1
 FINDER_APP_DIR=$(realpath $(dirname $0))
 ARCH=arm64
 CROSS_COMPILE=aarch64-none-linux-gnu-
-MYSYSROOT=/home/charles/coursera/install-lnx/gcc-arm-10.2-2020.11-x86_64-aarch64-none-linux-gnu/aarch64-none-linux-gnu/libc
 
 if [ $# -lt 1 ]
 then
@@ -72,8 +71,6 @@ then
     # TODO:  Configure busybox
     make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} distclean
     make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} defconfig
-    #make distclean
-    #make defconfig
 else
     pushd busybox
 fi
@@ -91,11 +88,26 @@ ${CROSS_COMPILE}readelf -a bin/busybox | grep "Shared library"
 popd
 
 # TODO: Add library dependencies to rootfs
-cp -a ${MYSYSROOT}/lib/* ${OUTDIR}/rootfs/lib
-cp -a ${MYSYSROOT}/lib64/* ${OUTDIR}/rootfs/lib64
+echo "downloading gcc-arm-10.2-2020.11-x86_64-aarch64-none-linux-gnu ......"
+wget https://developer.arm.com/-/media/Files/downloads/gnu-a/10.2-2020.11/binrel/gcc-arm-10.2-2020.11-x86_64-aarch64-none-linux-gnu.tar.xz
+tar -xJf gcc-arm-10.2-2020.11-x86_64-aarch64-none-linux-gnu.tar.xz -C .
+
+if [ -d gcc-arm-10.2-2020.11-x86_64-aarch64-none-linux-gnu/aarch64-none-linux-gnu/libc ]
+then
+    echo "Copy library to rootfs ..."
+    cp -a gcc-arm-10.2-2020.11-x86_64-aarch64-none-linux-gnu/aarch64-none-linux-gnu/libc/lib/* ${OUTDIR}/rootfs/lib
+    cp -a gcc-arm-10.2-2020.11-x86_64-aarch64-none-linux-gnu/aarch64-none-linux-gnu/libc/lib64/* ${OUTDIR}/rootfs/lib64
+
+    rm -rf gcc-arm-10.2-2020.11-x86_64-aarch64-none-linux-gnu
+else
+    echo "Necessary library is not found."
+fi
+
+rm gcc-arm-10.2-2020.11-x86_64-aarch64-none-linux-gnu.tar.xz
 
 # TODO: Make device nodes
 pushd rootfs
+echo "Make device nodes ..."
 sudo mknod -m 666 dev/null c 1 3
 sudo mknod -m 600 dev/console c 5 1
 sudo mknod -m 666 dev/tty c 5 0
