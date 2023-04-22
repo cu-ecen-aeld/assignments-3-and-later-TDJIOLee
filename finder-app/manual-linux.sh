@@ -122,7 +122,7 @@ make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE}
 
 # TODO: Copy the finder related scripts and executables to the /home directory
 # on the target rootfs
-cp writer ${OUTDIR}/rootfs/home/usr/bin
+cp writer ${OUTDIR}/rootfs/home
 cp finder.sh ${OUTDIR}/rootfs/home
 [ ! -d "${OUTDIR}/rootfs/home/etc/finder-app/conf" ] && mkdir -p ${OUTDIR}/rootfs/home/etc/finder-app/conf
 cp conf/username.txt ${OUTDIR}/rootfs/home/etc/finder-app/conf
