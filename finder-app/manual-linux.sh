@@ -124,8 +124,9 @@ make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE}
 # on the target rootfs
 cp writer ${OUTDIR}/rootfs/home
 cp finder.sh ${OUTDIR}/rootfs/home
-cp conf/username.txt ${OUTDIR}/rootfs/home
-cp conf/assignment.txt ${OUTDIR}/rootfs/home
+[ ! -d "${OUTDIR}/rootfs/home/etc/finder-app/conf" ] && mkdir -p ${OUTDIR}/rootfs/home/etc/finder-app/conf
+cp conf/username.txt ${OUTDIR}/rootfs/home/etc/finder-app/conf
+cp conf/assignment.txt ${OUTDIR}/rootfs/home/etc/finder-app/conf
 cp finder-test.sh ${OUTDIR}/rootfs/home
 cp autorun-qemu.sh ${OUTDIR}/rootfs/home
 
